@@ -29,7 +29,8 @@ export const ColumnHeader = memo(function ColumnHeader({
   onDrop,
 }: ColumnHeaderProps) {
   return (
-    <div
+    // ✅ ИСПРАВЛЕНО: используем <th> вместо <div>
+    <th
       className="col-header"
       style={{ width }}
       onDragOver={(e) => e.preventDefault()}
@@ -57,6 +58,6 @@ export const ColumnHeader = memo(function ColumnHeader({
       </div>
 
       <div className="resizer" onMouseDown={(e) => onResizeStart(colKey, e)} />
-    </div>
+    </th>
   );
 });

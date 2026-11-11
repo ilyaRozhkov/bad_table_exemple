@@ -17,12 +17,10 @@ export function BadTable() {
   const renderCount = useRef(0);
   renderCount.current += 1;
 
-  // ❌ НИКАКОЙ мемоизации — пересчёт на каждый рендер
   let data: Row[] = ROWS;
   for (const key of Object.keys(filters)) {
     const q = (filters[key] ?? '').trim().toLowerCase();
     if (!q) continue;
-    // ✅ ИСПРАВЛЕНО: добавлен String(row[key])
     data = data.filter((row) => String(row[key]).toLowerCase().includes(q));
   }
   if (sort) {
@@ -31,12 +29,10 @@ export function BadTable() {
       const av = a[key];
       const bv = b[key];
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
-      // ✅ ИСПРАВЛЕНО: добавлен String(bv), чтобы localeCompare получил строку
       return String(av).localeCompare(String(bv), 'ru') * dir;
     });
   }
 
-  // ❌ обработчики создаются заново на каждый рендер
   const toggleSort = (key: string) => {
     setSort((prev) => {
       if (!prev || prev.key !== key) return { key, dir: 1 };
@@ -87,6 +83,10 @@ export function BadTable() {
     });
   };
 
+  const onCopy = (value: string | number) => {
+    navigator.clipboard.writeText(String(value));
+  }
+
   const totalWidth = order.reduce((sum, k) => sum + widths[k], 0);
 
   return (
@@ -94,7 +94,10 @@ export function BadTable() {
       <div className="stats">
         <span>Рендеров: <b>{renderCount.current}</b></span>
         <span>Строк в выборке: <b>{data.length}</b></span>
-        <span>Ячеек в DOM: <b>{(data.length * order.length).toLocaleString('ru-RU')}</b></span>
+        <span>
+          Ячеек в DOM:{' '}
+          <b className="bad">{(data.length * order.length).toLocaleString('ru-RU')}</b>
+        </span>
         <span>Виртуализация: <b className="bad">нет</b></span>
         <span>memo / useMemo / useCallback: <b className="bad">нет</b></span>
       </div>
@@ -132,13 +135,15 @@ export function BadTable() {
           </thead>
 
           <tbody>
+            {/* ✅ ИСПРАВЛЕНО: Добавлен key={row.id} */}
             {data.map((row) => (
               <tr key={row.id}>
+                {/* ✅ ИСПРАВЛЕНО: Добавлен key={key} и убран класс grid-cell */}
                 {order.map((key) => (
-                  // ❌ новый объект стиля на каждую ячейку при каждом рендере
-                  <td key={key} style={{ padding: '4px 8px' }}>
-                    {/* ✅ ИСПРАВЛЕНО: String(row[key]) уже используется здесь, это правильно */}
-                    {String(row[key])}
+                  <td key={key}>
+                    <div onClick={() => onCopy(row[key])} style={{ cursor: 'pointer' }}>
+                      {String(row[key])}
+                    </div>
                   </td>
                 ))}
               </tr>
